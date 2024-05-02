@@ -1,6 +1,6 @@
 #pragma once
-const int NV = 20;
-const int NE = 20;
+const int NV = 25;
+const int NE = 40;
 
 struct Graph
 {

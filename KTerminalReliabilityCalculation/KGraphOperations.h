@@ -3,5 +3,7 @@
 
 bool KConnectivity(Graph G);
 Graph DeleteEdgeGraph(Graph G, int u, int v);
-Graph MergeVertex(Graph g, int u, int v);
+Graph MergeVertex(Graph G, int u, int v);
 int FindIndexEdgeForVertex(Graph G, int u, int v);
+Graph KParallelSeriesTransformation(Graph G, double &p);
+Graph Transformation(Graph G, int u, int v, int w, double &p);

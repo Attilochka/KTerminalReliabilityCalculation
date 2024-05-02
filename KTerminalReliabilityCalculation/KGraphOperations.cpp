@@ -1,5 +1,5 @@
 #include "KGraphOperations.h"
-
+#include "KGraphCalculation.h"
 
 bool KConnectivity(Graph G)
 {
@@ -135,8 +135,8 @@ Graph MergeVertex(Graph G, int u, int v)
 {
     int KAO[NV + 1], FO[2 * NE], S[NV + 1];
     double PArray[2 * NE];
+    Graph Result;
     int i, j, l = 0, k, boolka;
-    Graph R;
 
     for (i = 1; i < v; i++) {
         S[i] = i;
@@ -258,24 +258,274 @@ Graph MergeVertex(Graph G, int u, int v)
             break;
         }
     }
-    G.VertexCount--;
-    G.EdgeCount = l / 2;
+    Result.VertexCount = G.VertexCount-1;
+    Result.EdgeCount = l / 2;
     for (i = 0; i <= G.VertexCount; i++) {
-        G.KAO[i] = KAO[i];
+        Result.KAO[i] = KAO[i];
     }
     for (i = 0; i < G.EdgeCount * 2; i++) {
-        G.FO[i] = FO[i];
-        G.PArray[i] = PArray[i];
+        Result.FO[i] = FO[i];
+        Result.PArray[i] = PArray[i];
     }
+    Result.Targets[0] = 0;
+    for (int i{ 1 }; i < v; i++) {
+        Result.Targets[i] = G.Targets[i];
+    }
+    for (int i{ v + 1 }; i < G.VertexCount + 1; i++) {
+        Result.Targets[i - 1] = G.Targets[i];
+    }
+    if (G.Targets[u] == 1 || G.Targets[v] == 1) Result.Targets[u] = 1;
 
-    return G;
+    return Result;
 }
 
 int FindIndexEdgeForVertex(Graph G, int u, int v)
 {
     for (int i{ G.KAO[u - 1] }; i < G.KAO[u]; i++) {
         if (G.FO[i] == v) {
-            return u = i;
+            return i;
         }
     }
 }
+
+Graph KParallelSeriesTransformation(Graph G, double& p) //В delphi процедура по сути функция void, но не в этом случае
+{
+    bool b = false; // обозвать бы это адекватно
+    int  u = 0, v = 0, w, e1, e2;
+    double p1, p2, p3; //что за нумерация??? и это по-человечески. e4 и e3 в коде вообще не использовались
+    p = 1;
+    //KPST1
+    for (int i{ 1 }; i < G.VertexCount + 1; i++) {
+        if (G.KAO[i] - G.KAO[i - 1] == 1) {
+            if (u == 0) u = i;
+            else {
+                v = i;
+                if (G.Targets[i] == 1) {
+                    p = p * G.PArray[G.KAO[i - 1]];
+                    break;
+                }
+            }
+            if (G.Targets[i] = 1) p = p * G.PArray[G.KAO[i - 1]];
+        }
+    }
+    if (u != 0)
+    {
+        w = G.FO[G.KAO[u - 1]];
+        e1 = G.KAO[u - 1];
+        e2 = FindIndexEdgeForVertex(G, w, u);
+        if (u < w) {
+            for (int i{ u }; i < w - 1; i++)
+                G.KAO[i] = G.KAO[i + 1] - 1;
+
+            for (int i{ w - 1 }; i < G.VertexCount; i++)
+                G.KAO[i] = G.KAO[i + 1] - 2;
+
+            for (int i{ e1 }; i < e2 - 1; i++)
+                G.FO[i] = G.FO[i + 1];
+
+            for (int i{ e2 - 1 }; i < G.EdgeCount * 2 - 1; i++)
+                G.FO[i] = G.FO[i + 2];
+
+            for (int i{ 0 }; i < G.EdgeCount * 2 - 1; i++) {
+                if (G.FO[i] > u) G.FO[i]--;
+            }
+
+            for (int i{ e1 }; i < e2; i++)
+                G.PArray[i] = G.PArray[i + 1];
+
+            for (int i{ e2 }; i < G.EdgeCount * 2 - 1; i++)
+                G.PArray[i] = G.PArray[i + 2];
+        }
+        else {
+            for (int i{ w }; i < u; i++)
+                G.KAO[i]--;
+
+            for (int i{ u }; i < G.VertexCount; i++)
+                G.KAO[i] = G.KAO[i + 1] - 2;
+
+            for (int i{ e2 }; i < e1; i++)
+                G.FO[i] = G.FO[i + 1];
+
+            for (int i{ e1 }; i < G.EdgeCount * 2 - 1; i++)
+                G.FO[i] = G.FO[i + 2];
+
+            for (int i{ 0 }; i < G.EdgeCount * 2 - 1; i++) {
+                if (G.FO[i] > u) G.FO[i]--;
+            }
+            for (int i{ e2 }; i < e1 - 1; i++)
+                G.PArray[i] = G.PArray[i + 1];
+            for (int i{ e1 - 1 }; i < G.EdgeCount * 2 - 1; i++)
+                G.PArray[i] = G.PArray[i + 2];
+        }
+        if (G.Targets[u] == 1) G.Targets[w] = 1;
+        for (int i{ u }; i < G.VertexCount; i++)
+            G.Targets[i] = G.Targets[i + 1];
+        G.VertexCount--;
+        G.EdgeCount--;
+    }
+    //+ дальше идет вот это KPST без единицы. Ничего не понимаю.
+    //KPST?
+    for (int i{ 1 }; i < G.VertexCount + 1; i++) {
+        if ((G.KAO[i] - G.KAO[i - 1] == 2) && ((G.Targets[i] == 0) ||
+            ((G.Targets[i] == 1) && (G.Targets[G.FO[G.KAO[i - 1]]] == 1) &&
+                (G.Targets[G.FO[G.KAO[i] - 1]] == 1)))) {
+            b = true;
+            v = i;
+            u = G.FO[G.KAO[i - 1]];
+            w = G.FO[G.KAO[i] - 1];
+            p1 = G.PArray[G.KAO[i - 1]];
+            p2 = G.PArray[G.KAO[i] - 1];
+            break; 
+            //из-за break не идет while. без if while не заработает. возможно while должен быть вне цикла for? тогда откуда взяться g.targets[i]?? + while этот получается бесконечный
+            //где-то я напутала порядок 
+        }
+        //while (b) {
+        //    if (G.Targets[i] = 1) {
+        //        p *= (p1 + p2 - p1 * p2); // выдает "неинициализированна" => не зашло в длинный if
+        //        p3 = p1 * p2 / (p1 + p2 - p1 * p2);
+        //    }
+        //    else p3 = p1 * p2;  
+        //}
+    }
+    //оберну while в другой цикл for. Какой-то косяк тут
+    for (int i{ 1 }; i < G.VertexCount + 1; i++) {
+        while (b) {
+            if (G.Targets[i] = 1) {
+                p *= (p1 + p2 - p1 * p2); // выдает "неинициализированна" => не зашло в длинный if
+                p3 = p1 * p2 / (p1 + p2 - p1 * p2);
+            }
+            else p3 = p1 * p2;
+            G = Transformation(G, u, v, w, p3);
+            b = false;
+            for (int i{ 1 }; i < G.VertexCount + 1; i++) {
+                if (G.KAO[i] - G.KAO[i - 1] == 2 && ((G.Targets[i] == 0) ||
+                    ((G.Targets[i] == 1) && (G.Targets[G.FO[G.KAO[i - 1]]] == 1) &&
+                        (G.Targets[G.FO[G.KAO[i] - 1]] == 1)))) {
+                    b = true;
+                    v = i;
+                    u = G.FO[G.KAO[i - 1]];
+                    w = G.FO[G.KAO[i] - 1];
+                    p1 = G.PArray[G.KAO[i - 1]];
+                    p2 = G.PArray[G.KAO[i] - 1];
+                    break;
+                }
+            }
+        }
+        
+    }
+    
+    return G;
+}
+
+Graph Transformation(Graph G, int u, int v, int w, double &p) /*Тут был недоумевающий комментарий. Сами гадайте, что я там не поняла*/
+{
+    int l = 0;  
+    //int targetsLength = G.VertexCount, kaoLength = G.VertexCount, foLength, pArrayLength; //размеры для Result. Сделаем пока так, чтобы не запутаться с G
+    int Numbers[NV];
+    Graph Result;
+    for (int i{ 0 }; i < v; i++) {
+        Result.Targets[i] = G.Targets[i];
+    }
+    for (int i{ v }; i < G.VertexCount; i++) {
+        Result.Targets[i] = G.Targets[i + 1];
+    }
+    Result.VertexCount = G.VertexCount - 1; //SetLength(Result.KAO, length(G.KAO)-1);
+    Result.KAO[0] = 0;
+    for (int i{ 0 }; i < v;i++) {
+        Numbers[i] = i;
+    }
+    Numbers[v] = 0;
+    for (int i{ v + 1 }; i < G.VertexCount + 1; i++) {
+        Numbers[i] = i - 1;
+    }
+    //С этого момента начитается хоррор
+    /*Загадка человечества - много дублирования
+      Довольно запутанная ситуация из-за этого, стоит проверить раз 10*/
+    if (FindIndexEdgeForVertex(G, u, w) < G.EdgeCount * 2) {
+        //foLength = G.EdgeCount * 2 - 4;
+        //pArrayLength = G.EdgeCount * 2 - 4;
+        p = 1 - (1 - G.PArray[FindIndexEdgeForVertex(G, u, w)]) * (1 - p); //Формула? Какая?
+        //SetLength(Result.FO, length(G.FO)-4); 
+        Result.EdgeCount = G.EdgeCount - 2;
+        for (int i{ 1 }; i < G.VertexCount + 1;i++) {
+            if (i == u || i == w) {
+                Result.KAO[Numbers[i]] = Result.KAO[Numbers[i] - 1];
+                for (int j{ G.KAO[i - 1] }; j < G.KAO[i]; j++) { 
+                    if (G.FO[j] == w || G.FO[j] == u) {
+                        Result.FO[l] = Numbers[G.FO[j]];
+                        Result.PArray[l] = p;
+                        Result.KAO[Numbers[i]]++;
+                        l++;
+                    }
+                    else if (G.FO[j] != v) {
+                        Result.FO[l] = Numbers[G.FO[j]];
+                        Result.PArray[l] = G.PArray[j];;
+                        Result.KAO[Numbers[i]]++;
+                        l++;
+                    }
+                }
+            }
+            else if (i != v) {
+                Result.KAO[Numbers[i]] = Result.KAO[Numbers[i] - 1];
+                for (int j{ G.KAO[i - 1] }; j < G.KAO[i]; j++) {
+                    Result.FO[l] = Numbers[G.FO[j]];
+                    Result.PArray[l] = G.PArray[j];;
+                    Result.KAO[Numbers[i]]++;
+                    l++;
+                }
+            }
+        }
+    }
+    else {
+        /*foLength = G.EdgeCount * 2 - 2;
+        pArrayLength = G.EdgeCount * 2 - 2;*/
+        //SetLength(Result.FO, length(G.FO)-2);
+        Result.EdgeCount = G.EdgeCount - 1;
+        for (int i{ 1 }; i < G.VertexCount + 1; i++) {
+            if (i == u) {
+                Result.KAO[Numbers[i]] = Result.KAO[Numbers[i] - 1];
+                Result.FO[l] = Numbers[w];
+                Result.PArray[l] = p;
+                Result.KAO[Numbers[i]]++;
+                l++;
+                for (int j{ G.KAO[i - 1] }; j < G.VertexCount + 1; j++) {
+                    if (G.FO[j] != v) {
+                        Result.FO[l] = Numbers[G.FO[j]];
+                        Result.PArray[l] = G.PArray[j];
+                        Result.KAO[Numbers[i]]++;
+                        l++;
+                    }
+                }
+            }
+            else if (i == w) {
+                Result.KAO[Numbers[i]] = Result.KAO[Numbers[i] - 1];
+                Result.FO[l] = Numbers[u];
+                Result.PArray[l] = p;
+                Result.KAO[Numbers[i]]++;
+                l++;
+                for (int j{ G.KAO[i - 1] }; j < G.VertexCount + 1; j++) {
+                    if (G.FO[j] != v) {
+                        Result.FO[l] = Numbers[G.FO[j]];
+                        Result.PArray[l] = G.PArray[j];
+                        Result.KAO[Numbers[i]]++;
+                        l++;
+                    }
+                }
+            }
+            else if (i != v) {
+                Result.KAO[Numbers[i]] = Result.KAO[Numbers[i] - 1];
+                for (int j{ G.KAO[i - 1] }; j < G.VertexCount + 1; j++) {
+                    Result.FO[l] = Numbers[G.FO[j]];
+                    Result.PArray[l] = G.PArray[j];
+                    Result.KAO[Numbers[i]]++;
+                    l++;
+                }
+            }
+        }
+    }
+    //Result.VertexCount = kaoLength-1;
+    //Result.EdgeCount = foLength / 2;
+    return Result;
+}
+
+

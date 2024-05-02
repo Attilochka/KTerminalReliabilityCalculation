@@ -1,4 +1,4 @@
-﻿#include<vector>
+﻿#include <vector>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -38,11 +38,12 @@ Graph ReadingGraphFromFile() {
             graphFile >> G.FO[i];
             if (i != G.EdgeCount * 2 - 1) graphFile >> comma;
         }
-        for (int i{ 0 }; i < G.VertexCount + 1;i++) {
+        G.Targets[0] = 0;
+        for (int i{ 1 }; i < G.VertexCount + 1;i++) {
             graphFile >> G.Targets[i];
             if (i != G.VertexCount) graphFile >> comma;
         }
-        for (int i{ 0 }; i < 2 * G.EdgeCount; i++) G.PArray[i] = 0.75;
+        for (int i{ 0 }; i < 2 * G.EdgeCount; i++) G.PArray[i] = 0.9;
     }
     graphFile.close();
     return G;
