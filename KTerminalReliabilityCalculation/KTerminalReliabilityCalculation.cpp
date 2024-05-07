@@ -43,7 +43,7 @@ Graph ReadingGraphFromFile() {
             graphFile >> G.Targets[i];
             if (i != G.VertexCount) graphFile >> comma;
         }
-        for (int i{ 0 }; i < 2 * G.EdgeCount; i++) G.PArray[i] = 0.9;
+        for (int i{ 0 }; i < 2 * G.EdgeCount; i++) G.PArray[i] = 0.5;
     }
     graphFile.close();
     return G;

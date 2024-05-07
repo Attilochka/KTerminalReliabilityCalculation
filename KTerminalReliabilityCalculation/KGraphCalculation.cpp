@@ -11,11 +11,12 @@ double KFactoringProbabilityPST(Graph G, int variant)
     double p1 = 1;
 
     if (variant == 0) {
+        if (KComponent(G) == false) return 0;
         if (KConnectivity(G) == false) return 0;
     } 
     if (TargetVertexQuality(G) == 1) return 1;
     else {
-        //G = KParallelSeriesTransformation(G, p1);
+        G = KParallelSeriesTransformation(G, p1);
         if (G.VertexCount == 2) {
             if (G.Targets[1] == 1 && G.Targets[2] == 1 && G.EdgeCount>0) return p1 * G.PArray[1];
             else return p1;
@@ -53,5 +54,6 @@ unsigned int LastNotEmptyVertice(Graph G)
 double Probability(Graph G)
 {
     double p = 1;
-    return p * KFactoringProbabilityPST(G, 0);
+    if (KComponent(G) == false) return 0;
+    else return p * KFactoringProbabilityPST(G, 0);
 }
